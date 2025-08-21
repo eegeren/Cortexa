@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: cortexa-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: cortexaadmin
+      MONGO_INITDB_ROOT_PASSWORD: cortexapass123
+      MONGO_INITDB_DATABASE: cortexa_dev
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb/init:/docker-entrypoint-initdb.d
+    networks:
+      - cortexa-network
+
+  # Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cortexa-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URL=mongodb://cortexaadmin:cortexapass123@mongodb:27017/cortexa_dev?authSource=admin
+      - DB_NAME=cortexa_dev
+      - EMERGENT_LLM_KEY=sk-emergent-9716d9aA71c1a0aC40
+      - JWT_SECRET=cortexa-local-development-key-2025
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+      - PORT=8000
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend/build:/app/frontend/build
+    networks:
+      - cortexa-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Development Service (Optional)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../frontend.Dockerfile
+    container_name: cortexa-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - cortexa-network
+    profiles:
+      - dev
+
+volumes:
+  mongodb_data:
+
+networks:
+  cortexa-network:
+    driver: bridge
