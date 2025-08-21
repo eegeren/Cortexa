@@ -1,25 +1,18 @@
-# Railway-optimized Dockerfile for Cortexa
-FROM python:3.11
-
-# Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt-get install -y nodejs
+# Ultra Simple Railway Dockerfile - Backend Only
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy requirements and install Python packages
 COPY requirements.txt .
-COPY frontend/package*.json ./frontend/
+RUN pip install --no-cache-dir -r requirements.txt --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
 
-# Install dependencies
-RUN pip install -r requirements.txt --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
-RUN cd frontend && npm install
+# Copy main application
+COPY main.py .
 
-# Copy all files
-COPY . .
-
-# Build frontend
-RUN cd frontend && npm run build && cp -r build ../static
+# Create empty static directory for Railway
+RUN mkdir -p static
 
 # Expose port
 EXPOSE 8000

@@ -1,9 +1,9 @@
 {
   "build": {
-    "builder": "DOCKERFILE"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile.simple"
   },
   "deploy": {
-    "healthcheckPath": "/api",
-    "healthcheckTimeout": 300
+    "healthcheckPath": "/api"
   }
 }
